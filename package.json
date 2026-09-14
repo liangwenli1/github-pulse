@@ -1,18 +1,23 @@
 {
   "name": "github-pulse",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "dev": "concurrently \"vite --host 127.0.0.1\" \"node server/index.js\"",
+    "dev": "concurrently \"vite --host 0.0.0.0\" \"node server/index.js\"",
     "build": "vite build",
     "start": "node server/index.js",
     "collect": "node server/jobs.js collect",
     "history": "node server/jobs.js history",
     "digest": "node server/jobs.js digest",
-    "test": "node --test server/*.test.js"
+    "backfill": "node server/jobs.js backfill",
+    "test": "node --test server/pulse.test.js && node --test server/mail.test.js && node --test server/api.test.js"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-select": "^2.3.7",
     "@radix-ui/react-tabs": "^1.1.13",
@@ -20,6 +25,7 @@
     "dotenv": "^17.2.2",
     "express": "^5.2.1",
     "nodemailer": "^10.0.9",
+    "pg": "^8.16.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "recharts": "^3.10.1"
