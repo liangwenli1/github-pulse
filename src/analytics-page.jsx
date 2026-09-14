@@ -18,7 +18,7 @@ function Axis({yName}){return <><CartesianGrid vertical={false} stroke="#e9e9e9"
 function Tile(props){const {x,y,width,height,name,index,value}=props;if(!width||!height)return null;const shade=index%palette.length,dark=shade<3;const titleSize=width>=240?20:width>=160?17:14;const valueSize=width>=240?17:width>=160?15:13;const fullName=compactName(name);const maxChars=Math.max(3,Math.floor((width-22)/(titleSize*.56)));const label=fullName.length>maxChars?`${fullName.slice(0,maxChars-1)}…`:fullName;return <g><title>{name}: {short(value)} Stars</title><rect x={x} y={y} width={width} height={height} fill={palette[shade]} stroke="#fff" strokeWidth={3} rx={7}/>{width>95&&height>42&&<text x={x+11} y={y+titleSize+5} fill={dark?'#fff':'#111'} fontSize={titleSize} fontWeight={650}>{label}</text>}{width>95&&height>60&&<text x={x+11} y={y+titleSize+valueSize+9} fill={dark?'#ffffffe8':'#262626'} fontSize={valueSize} fontWeight={550} fontVariant="tabular-nums">{short(value)} ★</text>}</g>}
 function ProjectTooltip({active,payload,l,t}){if(!active||!payload?.length)return null;const item=payload[0].payload;return <div className="analytics-tooltip"><strong>{item.full_name||item.name}</strong><span>{t.stars}: {num(item.stars,l)}</span><span>{t.forks}: {num(item.forks,l)}</span></div>}
 
-export function AnalyticsPage({l,names,updatePath}){
+export function AnalyticsPage({l,names,updatePath,type='github-repo'}){
   const init=new URLSearchParams(location.search);
   const [board,setBoard]=useState(names[init.get('board')]?init.get('board'):'hot');
   const [period,setPeriod]=useState(['day','week','month'].includes(init.get('period'))?init.get('period'):'week');
@@ -29,11 +29,11 @@ export function AnalyticsPage({l,names,updatePath}){
   useEffect(()=>{
     const controller=new AbortController();
     const query=new URLSearchParams({board,period,...filters});
-    history.replaceState({},'',`/${l}/charts?${query}`);window.dispatchEvent(new PopStateEvent('popstate'));
+    history.replaceState({},'',`/${l}/${type}/charts?${query}`);window.dispatchEvent(new PopStateEvent('popstate'));
     setLoading(true);setError(false);
-    Promise.all([fetch(`/api/chart?${query}`,{signal:controller.signal}),fetch(`/api/rankings?${query}&page=1&limit=50`,{signal:controller.signal})]).then(async responses=>{if(responses.some(r=>!r.ok))throw Error('charts');return Promise.all(responses.map(r=>r.json()))}).then(([chart,ranking])=>setData({chart,ranking})).catch(e=>{if(e.name!=='AbortError')setError(true)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});
+    Promise.all([fetch(`/api/${type}/charts?${query}`,{signal:controller.signal}),fetch(`/api/${type}/rankings?${query}&page=1&limit=50`,{signal:controller.signal})]).then(async responses=>{if(responses.some(r=>!r.ok))throw Error('charts');return Promise.all(responses.map(r=>r.json()))}).then(([chart,ranking])=>setData({chart,ranking})).catch(e=>{if(e.name!=='AbortError')setError(true)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});
     return()=>controller.abort();
-  },[board,period,filters,l,revision]);
+  },[board,period,filters,l,revision,type]);
   const chart=data?.chart, ranking=data?.ranking, items=ranking?.items||[];
   const series=chart?.points||[];
   const daily=useMemo(()=>series.slice(1).map((p,i)=>({date:p.date,value:p.gain===null||series[i].gain===null?null:p.gain-series[i].gain})),[chart]);

@@ -17,16 +17,16 @@ function DataTable({title,points,keyName,l,t}){
   return <table className="sr-only"><caption>{title}</caption><thead><tr><th>{t.day}</th><th>{t.stars}</th></tr></thead><tbody>{points.map(point=><tr key={point.date}><td>{point.date}</td><td>{point[keyName]===null?'—':format(point[keyName],l)}</td></tr>)}</tbody></table>;
 }
 
-export function TrendPanel({l,board,period,language,topic,age,q,boardLabel,periodLabel}){
+export function TrendPanel({l,type='github-repo',board,period,language,topic,age,q,boardLabel,periodLabel}){
   const [data,setData]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(false);
   const t=copy[l];
   useEffect(()=>{
     const controller=new AbortController();
     setLoading(true);setError(false);
     const query=new URLSearchParams({board,period,language,topic,age,q});
-    fetch(`/api/chart?${query}`,{signal:controller.signal}).then(response=>{if(!response.ok)throw Error('chart');return response.json()}).then(setData).catch(err=>{if(err.name!=='AbortError')setError(true)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});
+    fetch(`/api/${type}/charts?${query}`,{signal:controller.signal}).then(response=>{if(!response.ok)throw Error('chart');return response.json()}).then(setData).catch(err=>{if(err.name!=='AbortError')setError(true)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});
     return()=>controller.abort();
-  },[board,period,language,topic,age,q]);
+  },[type,board,period,language,topic,age,q]);
   const points=data?.points||[];
   const daily=useMemo(()=>points.slice(1).map((point,index)=>({date:point.date,value:point.gain===null||points[index].gain===null?null:point.gain-points[index].gain})),[data]);
   const bars=data?.bars||[];

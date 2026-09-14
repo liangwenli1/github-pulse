@@ -83,7 +83,11 @@ async function createAdapter() {
 async function init() {
   adapter = await createAdapter();
   await adapter.exec(schemaSql);
-  if (dataSource() === 'demo') await seedDemo();
+  if (dataSource() === 'demo') {
+    await seedDemo();
+    const { seedCatalog } = await import('./catalog.js');
+    await seedCatalog();
+  }
   await rebuildDerivedMetrics();
   return adapter;
 }

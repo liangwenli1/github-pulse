@@ -56,6 +56,41 @@ CREATE TABLE IF NOT EXISTS period_metrics (
   PRIMARY KEY (repo_id, period, source)
 );
 
+CREATE TABLE IF NOT EXISTS assets (
+  id TEXT PRIMARY KEY,
+  type TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  name TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  description TEXT,
+  category TEXT NOT NULL,
+  category_zh TEXT,
+  category_en TEXT,
+  official BOOLEAN NOT NULL DEFAULT FALSE,
+  official_evidence TEXT,
+  cluster_id TEXT,
+  url TEXT,
+  install TEXT,
+  language TEXT,
+  topics JSONB NOT NULL DEFAULT '[]'::jsonb,
+  stars INTEGER NOT NULL DEFAULT 0,
+  forks INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ,
+  pushed_at TIMESTAMPTZ,
+  recommend_rank INTEGER,
+  recommend_note_zh TEXT,
+  recommend_note_en TEXT,
+  UNIQUE (type, slug)
+);
+
+CREATE TABLE IF NOT EXISTS asset_daily (
+  asset_id TEXT NOT NULL,
+  day DATE NOT NULL,
+  star_created INTEGER,
+  stars INTEGER,
+  PRIMARY KEY (asset_id, day)
+);
+
 CREATE TABLE IF NOT EXISTS sync_runs (
   id SERIAL PRIMARY KEY,
   started_at TIMESTAMPTZ NOT NULL,
@@ -115,3 +150,7 @@ CREATE INDEX IF NOT EXISTS snapshots_source_sampled_idx ON snapshots (source, sa
 CREATE INDEX IF NOT EXISTS daily_metrics_source_day_idx ON daily_metrics (source, day);
 CREATE INDEX IF NOT EXISTS period_metrics_source_period_idx ON period_metrics (source, period);
 CREATE INDEX IF NOT EXISTS deliveries_sub_date_idx ON deliveries (subscription_id, local_date);
+CREATE INDEX IF NOT EXISTS assets_type_idx ON assets (type);
+CREATE INDEX IF NOT EXISTS assets_category_idx ON assets (type, category);
+CREATE INDEX IF NOT EXISTS assets_cluster_idx ON assets (cluster_id);
+CREATE INDEX IF NOT EXISTS asset_daily_day_idx ON asset_daily (day);

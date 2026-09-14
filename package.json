@@ -1,6 +1,6 @@
 {
   "name": "github-pulse",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -14,7 +14,7 @@
     "history": "node server/jobs.js history",
     "digest": "node server/jobs.js digest",
     "backfill": "node server/jobs.js backfill",
-    "test": "node --test server/pulse.test.js && node --test server/mail.test.js && node --test server/api.test.js"
+    "test": "node --test server/pulse.test.js && node --test server/mail.test.js && node --test server/api.test.js && node --test server/catalog.test.js"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.4",

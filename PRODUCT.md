@@ -1,9 +1,13 @@
 # Product decisions and acceptance
 
+v0.3 is type-first. The five types are `skill`, `plugin`, `components`, `website`, and `github-repo`. Each type has Trending, rankings, and charts. Category pages present a recommended set of 2–4 options plus the full ranking. The site does not pick a single winner. Official marks and similar/duplicate counts are facts the user can use when choosing.
+
+Old `/ranking` and `/charts` URLs redirect to `/github-repo/ranking` and `/github-repo/charts`. Repository scoring, mail, and demo/live labelling from v0.2 still apply to `github-repo`.
+
 The revised brief is authoritative. The `grill-me` decision tree is resolved by the supplied requirements: audience = developers discovering open source; scope = six primary discovery views plus a secondary Fork view; locale = full `/zh` and `/en`; data = clearly labelled demo and live sources; mail = verified daily combined digest. No unresolved direction-setting question blocks the local build.
 
 Hot score: 45% log-scaled period Star additions, 20% smoothed growth rate (`gain / (current stars - gain + 100)`), 15% log-scaled Fork net gain, 20% repository push recency. Each input is normalized within the current filtered candidate set to 0–100. No current total-star term is used. Live Star additions come from GitHub's official weekly Star-history day buckets; they are gross new stars and bucket boundaries may differ from UTC. Fork net gain requires two local snapshots; while unavailable its component is omitted and the other weights are renormalized. A gain above three times the previous comparable period is flagged as anomalous and excluded from hot scoring until reviewed. Demo snapshots are explicitly synthetic net changes.
 
 Newcomers are at most 90 days old, have at least 20 Stars, and sort by valid period gain. AI classification matches published topics/description keywords and exposes matched evidence plus a correction report action. Language and topic are filters over the same ranked set. Fork uses current total and is secondary navigation.
 
-Acceptance: both locales show identical repository data; a footer-right language button preserves path and query; filters/search/pagination work; verification precedes active subscription; a due subscription generates one combined digest per local day and can be paused, resumed, edited, or cancelled; demo mail can be inspected without credentials.
+Acceptance: both locales show identical repository data; a footer-right language button preserves path and query; filters/search/pagination work; verification precedes active subscription; a due subscription generates one combined digest per local day and can be paused, resumed, edited, or cancelled; demo mail can be inspected without credentials. Type home, Skill/Plugin rankings, category pages, official lists, compare (2–3 items), and detail pages with similar clusters are reachable from the same design system.

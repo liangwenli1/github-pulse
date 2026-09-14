@@ -6,6 +6,10 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { asIso, asJson, asNumber, dbKind, many, one, query, ready, rebuildDerivedMetrics } from './db.js';
 import { getRankings, getChart, getFilters, boards, aiEvidence } from './rankings.js';
+import {
+  isType, getTypeSummary, getCatalogFilters, getCatalogRankings,
+  getCatalogChart, getCatalogItem, getSimilar, getCategories, getCategory, getCompare, searchCatalog
+} from './catalog.js';
 import { mailReady, sendVerification } from './mail.js';
 import { collect, digest, encryptManageToken, decryptManageToken, token, hash } from './jobs.js';
 
@@ -46,6 +50,46 @@ app.get('/api/boards', (_req, res) => res.json({ boards, mode: demo ? 'demo' : '
 app.get('/api/filters', async (_req, res) => res.json(await getFilters()));
 app.get('/api/rankings', async (req, res) => res.json({ ...await getRankings(req.query), mailReady: demo || mailReady() }));
 app.get('/api/chart', async (req, res) => res.json(await getChart(req.query)));
+app.get('/api/types', async (_req, res) => res.json(await getTypeSummary()));
+app.get('/api/search', async (req, res) => res.json(await searchCatalog(req.query.q, req.query.type)));
+app.get('/api/:type/filters', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  res.json(await getCatalogFilters(req.params.type));
+});
+app.get('/api/:type/trending', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  res.json({ ...await getCatalogRankings(req.params.type, { ...req.query, period: req.query.period || 'day', board: req.query.board || 'hot' }), mailReady: demo || mailReady() });
+});
+app.get('/api/:type/rankings', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  res.json({ ...await getCatalogRankings(req.params.type, req.query), mailReady: demo || mailReady() });
+});
+app.get('/api/:type/charts', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  res.json(await getCatalogChart(req.params.type, req.query));
+});
+app.get('/api/:type/categories/:slug', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  res.json(await getCategory(req.params.type, req.params.slug, req.query));
+});
+app.get('/api/:type/categories', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  res.json(await getCategories(req.params.type));
+});
+app.get('/api/:type/compare', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  res.json(await getCompare(req.params.type, req.query.ids));
+});
+app.get('/api/:type/items/:id/similar', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  res.json(await getSimilar(req.params.type, req.params.id));
+});
+app.get('/api/:type/items/:id', async (req, res) => {
+  if (!isType(req.params.type)) return fail(res, 404, 'Unknown type');
+  const item = await getCatalogItem(req.params.type, req.params.id);
+  if (!item) return fail(res, 404, 'Not found');
+  res.json(item);
+});
 app.get('/api/repos/:id', async (req, res) => {
   const repo = await one(
     'SELECT * FROM repos WHERE id = $1 OR full_name = $2',
