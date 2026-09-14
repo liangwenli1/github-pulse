@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { BoardTabs } from './components.jsx';
 import { TYPES, TYPE_META, typeLabel, typePath, itemPath } from './catalog.js';
 
 const fmt = (n, l) => n === null || n === undefined ? '—' : new Intl.NumberFormat(l === 'zh' ? 'zh-CN' : 'en-US').format(n);
 const api = (url) => fetch(url).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Request failed'); return j; });
 
-export function TypeBar({ l, type, navigate }) {
+export function TypeNav({ l, type, page, query = '', navigate }) {
+  const view = preservedView(page);
+  const q = page === 'home' ? '' : query;
   return (
-    <nav className="type-bar" aria-label={l === 'zh' ? '资产类型' : 'Asset types'}>
+    <nav className="header-types" aria-label={l === 'zh' ? '资产类型' : 'Asset types'}>
       {TYPES.map(id => (
         <a
           key={id}
-          className="type-bar-link"
-          href={typePath(l, id)}
+          className="header-link"
+          href={typePath(l, id, view, q)}
           aria-current={type === id ? 'page' : undefined}
-          onClick={e => navigate(e, typePath(l, id))}
+          onClick={e => navigate(e, typePath(l, id, view), q)}
         >
           {TYPE_META[id][l === 'zh' ? 'zh' : 'en']}
         </a>
@@ -23,23 +24,39 @@ export function TypeBar({ l, type, navigate }) {
   );
 }
 
-export function TypeSubnav({ l, type, page, query, navigate }) {
-  const items = [
-    { id: 'trending', href: typePath(l, type), label: l === 'zh' ? 'Trending' : 'Trending' },
+function preservedView(page) {
+  if (page === 'charts') return 'charts';
+  if (page === 'official') return 'official';
+  if (page === 'trending') return '';
+  return 'ranking';
+}
+
+export function ViewBar({ l, type, page, query = '', navigate }) {
+  if (!type) return null;
+  const current = page === 'charts' ? 'charts' : page === 'trending' ? 'trending' : page === 'official' ? 'official' : 'ranking';
+  const views = [
+    { id: 'trending', href: typePath(l, type), label: 'Trending' },
     { id: 'ranking', href: typePath(l, type, 'ranking', query), label: l === 'zh' ? '排行' : 'Rankings' },
     { id: 'charts', href: typePath(l, type, 'charts', query), label: l === 'zh' ? '图表' : 'Charts' },
-    { id: 'official', href: typePath(l, type, 'official', query), label: l === 'zh' ? '官方' : 'Official' }
+    { id: 'official', href: typePath(l, type, 'official'), label: l === 'zh' ? '官方' : 'Official' }
   ];
   return (
-    <BoardTabs
-      value={['trending', 'ranking', 'charts', 'official'].includes(page) ? page : 'trending'}
-      onChange={id => {
-        const target = items.find(x => x.id === id);
-        if (target) navigate({ preventDefault() {}, button: 0 }, target.href.split('?')[0], target.href.split('?')[1] || '');
-      }}
-      label={l === 'zh' ? '视图' : 'Views'}
-      items={items.map(x => ({ id: x.id, label: x.label }))}
-    />
+    <nav className="view-bar" aria-label={l === 'zh' ? '视图' : 'Views'}>
+      {views.map(item => (
+        <a
+          key={item.id}
+          className="view-bar-link"
+          href={item.href}
+          aria-current={current === item.id ? 'page' : undefined}
+          onClick={e => {
+            const [pathOnly, q] = item.href.split('?');
+            navigate(e, pathOnly, q || '');
+          }}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
   );
 }
 
@@ -61,16 +78,17 @@ export function TypeHome({ l, t, navigate }) {
         </div>
       </section>
       <section className="charts-scene type-home-grid" id="types">
-        <div className="visuals-heading"><div><h2>{l === 'zh' ? '从类型开始' : 'Start with a type'}</h2><p>{l === 'zh' ? '每一类都有 Trending、排行和图表。' : 'Each type has Trending, rankings, and charts.'}</p></div></div>
+        <div className="visuals-heading"><div><h2>{l === 'zh' ? '从类型开始' : 'Start with a type'}</h2><p>{l === 'zh' ? '每一类都有 Trending、排行、图表和官方。' : 'Each type has Trending, rankings, charts, and Official.'}</p></div></div>
         <div className="chart-grid type-card-grid">
           {types.map(item => (
             <article className="chart-card type-card" key={item.id}>
-              <div className="chart-card-head"><h3>{item[l === 'zh' ? 'zh' : 'en']}</h3><span className="data-badge">{fmt(item.count, l)}</span></div>
+              <div className="chart-card-head"><h3><a href={typePath(l, item.id, 'ranking')} onClick={e => navigate(e, typePath(l, item.id, 'ranking'))}>{item[l === 'zh' ? 'zh' : 'en']}</a></h3><span className="data-badge">{fmt(item.count, l)}</span></div>
               <p className="type-card-copy">{l === 'zh' ? '前几名、官方标记、同类重复，自己选。' : 'Top results, official marks, and duplicates — you pick.'}</p>
               <div className="type-card-links">
                 <a href={typePath(l, item.id)} onClick={e => navigate(e, typePath(l, item.id))}>Trending</a>
                 <a href={typePath(l, item.id, 'ranking')} onClick={e => navigate(e, typePath(l, item.id, 'ranking'))}>{l === 'zh' ? '排行' : 'Rankings'}</a>
                 <a href={typePath(l, item.id, 'charts')} onClick={e => navigate(e, typePath(l, item.id, 'charts'))}>{l === 'zh' ? '图表' : 'Charts'}</a>
+                <a href={typePath(l, item.id, 'official')} onClick={e => navigate(e, typePath(l, item.id, 'official'))}>{l === 'zh' ? '官方' : 'Official'}</a>
               </div>
             </article>
           ))}

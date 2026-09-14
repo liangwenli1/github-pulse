@@ -7,14 +7,13 @@ export const TYPE_META = {
   'github-repo': { zh: '仓库', en: 'Repositories' }
 };
 export const ASSET_BOARDS = {
-  hot: ['近期热门', 'Trending now'],
+  hot: ['热门', 'Hot'],
   rising: ['升得最快', 'Fastest rising'],
   new: ['新秀', 'Newcomers'],
-  official: ['官方', 'Official'],
   stars: ['关注最多', 'Most starred']
 };
 export const REPO_BOARDS = {
-  hot: ['近期热门', 'Trending now'],
+  hot: ['热门', 'Hot'],
   rising: ['升星最快', 'Fastest rising'],
   new: ['新秀项目', 'Newcomers'],
   ai: ['AI 热门', 'AI & agents'],
