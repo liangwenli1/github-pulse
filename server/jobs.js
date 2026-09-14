@@ -71,7 +71,7 @@ async function github(url, version = '2022-11-28') {
   const headers = {
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': version,
-    'User-Agent': 'github-pulse'
+    'User-Agent': 'trend-top'
   };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   for (let attempt = 0; attempt < 3; attempt++) {

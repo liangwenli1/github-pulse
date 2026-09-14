@@ -1,6 +1,6 @@
-# GitHub Pulse
+# Trend Top
 
-A runnable bilingual GitHub discovery site with daily verified email digests. The default is **DEMO mode**: repository metadata and 33 days of metrics are illustrative synthetic samples. The interface and API label them as demo data. They are not GitHub's current rankings.
+A runnable bilingual discovery site for open-source skills, plugins, agents, components, websites, and GitHub repositories, with daily verified email digests. The default is **DEMO mode**: metadata and 33 days of metrics are illustrative synthetic samples. The interface and API label them as demo data. They are not GitHub's current rankings.
 
 v0.2 stores metrics in **PostgreSQL** when `DATABASE_URL` is set, and falls back to embedded **PGlite** for local demo and tests. Rankings are computed in SQL from pre-aggregated `period_metrics`. The first live collect expands 12 weeks of official Star history into daily rows, so day/week/month Star gains work immediately. Fork net still needs a second daily snapshot.
 
@@ -43,7 +43,7 @@ The activity component is **push recency**, a proxy, not PR/issue/release activi
 
 ## Design and component provenance
 
-`DESIGN.md` combines the [Wired guide in awesome-design-md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/wired/DESIGN.md) for high-contrast editorial typography, a black footer band, and square controls with the [Apple guide's](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/apple/DESIGN.md) viewport-sized section rhythm and single-color emphasis. GitHub Pulse uses its own restrained blue for chart series and active navigation. Scroll snapping and fade/slide transitions are implemented for this site; no brand artwork was copied.
+`DESIGN.md` combines the [Wired guide in awesome-design-md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/wired/DESIGN.md) for high-contrast editorial typography, a black footer band, and square controls with the [Apple guide's](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/apple/DESIGN.md) viewport-sized section rhythm and single-color emphasis. Trend Top uses its own restrained blue for chart series and active navigation. Scroll snapping and fade/slide transitions are implemented for this site; no brand artwork was copied.
 
 Three adapted 21st.dev component patterns are integrated in `src/components.jsx`: [float_ui Radix tabs](https://21st.dev/community/components/float_ui/tabs-2/tabs-with-background-color) for board navigation, [float_ui Radix dialog](https://21st.dev/community/components/float_ui/modal-dialog/modal-with-newsletter) for subscription, and [HextaUI clearable input](https://21st.dev/community/components/preetsuthar17/input) for search. All dropdowns now use [Radix Select](https://www.radix-ui.com/primitives/docs/components/select) with a shared visual treatment; the menu, selected row, and focus state are rendered by the app instead of the operating system. No preview assets or branding were copied. Credits remain here in the developer README rather than in the user-facing interface. The components use keyboard-operable Radix primitives, proper labels and focus styles; mobile layouts are checked separately.
 

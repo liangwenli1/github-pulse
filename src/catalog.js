@@ -1,7 +1,8 @@
-export const TYPES = ['skill', 'plugin', 'components', 'website', 'github-repo'];
+export const TYPES = ['skill', 'plugin', 'agent', 'components', 'website', 'github-repo'];
 export const TYPE_META = {
   skill: { zh: 'Skill', en: 'Skills' },
   plugin: { zh: '插件 / MCP', en: 'Plugins' },
+  agent: { zh: 'Agent', en: 'Agents' },
   components: { zh: '组件', en: 'Components' },
   website: { zh: '网站', en: 'Websites' },
   'github-repo': { zh: '仓库', en: 'Repositories' }
@@ -36,6 +37,10 @@ export const TRENDING_COPY = {
   plugin: {
     zh: { title: '插件和 MCP 的热度', sub: '近窗口里动量最高的插件与 MCP。重复项收进同类。' },
     en: { title: 'Plugins and MCP on the move', sub: 'Servers and plugins with the strongest recent momentum. Duplicates are clustered.' }
+  },
+  agent: {
+    zh: { title: '正在被用的 Agent', sub: '编程、研究、浏览器——同类 agent 很多时，先看近窗口前几名。' },
+    en: { title: 'Agents people are actually running', sub: 'Coding, research, browser agents. When a category is crowded, start with the top movers.' }
   },
   components: {
     zh: { title: '组件库里正在涨的', sub: '按钮、Hero、原语——同类很多时，先看近窗口前几名。' },

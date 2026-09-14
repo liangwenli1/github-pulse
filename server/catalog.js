@@ -1,10 +1,11 @@
 import { asDay, asIso, asJson, asNumber, dataSource, DAYS, many, one, query, utcDay } from './db.js';
 import { aiEvidence, getChart as getRepoChart, getFilters as getRepoFilters, getRankings as getRepoRankings, getStarSeries } from './rankings.js';
 
-export const TYPES = ['skill', 'plugin', 'components', 'website', 'github-repo'];
+export const TYPES = ['skill', 'plugin', 'agent', 'components', 'website', 'github-repo'];
 export const TYPE_META = {
   skill: { zh: 'Skill', en: 'Skills', unitZh: '个 skill', unitEn: 'skills' },
   plugin: { zh: '插件 / MCP', en: 'Plugins', unitZh: '个插件', unitEn: 'plugins' },
+  agent: { zh: 'Agent', en: 'Agents', unitZh: '个 agent', unitEn: 'agents' },
   components: { zh: '组件', en: 'Components', unitZh: '个组件', unitEn: 'components' },
   website: { zh: '网站', en: 'Websites', unitZh: '个网站', unitEn: 'websites' },
   'github-repo': { zh: '仓库', en: 'Repositories', unitZh: '个仓库', unitEn: 'repositories' }
@@ -52,7 +53,13 @@ const catalogItems = [
   ['website', 'glama', 'directory', '目录', 'Directory', 'glama/mcp', 'Large MCP directory with quality tiers.', false, null, 'site:directory', 'https://glama.ai/mcp/servers', null, 'TypeScript', ['mcp', 'directory'], 86800, 0, 400, '2025-01-15', 3, 'MCP 覆盖最全，噪音也最大。', 'Widest MCP coverage; also the noisiest.'],
   ['website', 'smithery', 'playground', '试用', 'Playground', 'smithery/app', 'Hosted MCP playground and registry.', false, null, 'site:playground', 'https://smithery.ai', null, 'TypeScript', ['mcp', 'hosting'], 7200, 0, 90, '2025-02-20', 1, '想先试用再装，用这个。', 'Try a server before installing.'],
   ['website', 'mcp-inspector', 'playground', '试用', 'Playground', 'modelcontextprotocol/inspector', 'Official inspector for MCP servers.', true, 'modelcontextprotocol org', 'site:playground', 'https://github.com/modelcontextprotocol/inspector', 'npx @modelcontextprotocol/inspector', 'TypeScript', ['mcp', 'devtools'], 4100, 380, 40, '2024-12-04', 2, '官方调试器，不是目录。', 'Official debugger, not a directory.'],
-  ['website', 'agentskills-io', 'docs', '文档', 'Docs', 'agentskills/spec', 'Agent Skills specification site.', true, 'agentskills.io spec', 'site:docs', 'https://agentskills.io', null, 'Markdown', ['skills', 'spec'], 2100, 0, 15, '2025-10-20', 1, '看规范而不是找现成 skill。', 'Read the spec, not a catalog of skills.']
+  ['website', 'agentskills-io', 'docs', '文档', 'Docs', 'agentskills/spec', 'Agent Skills specification site.', true, 'agentskills.io spec', 'site:docs', 'https://agentskills.io', null, 'Markdown', ['skills', 'spec'], 2100, 0, 15, '2025-10-20', 1, '看规范而不是找现成 skill。', 'Read the spec, not a catalog of skills.'],
+  ['agent', 'claude-code', 'coding', '编程助手', 'Coding', 'anthropics/claude-code', 'Official Claude agent for working in a real repository.', true, 'anthropics org', 'agent:coding', 'https://github.com/anthropics/claude-code', 'npm i -g @anthropic-ai/claude-code', 'TypeScript', ['agent', 'coding'], 54200, 4100, 890, '2025-02-24', 1, '官方仓库 agent，默认从这个看。', 'Official repo agent; start here.'],
+  ['agent', 'aider', 'coding', '编程助手', 'Coding', 'paul-gauthier/aider', 'Terminal coding agent that commits in small diffs.', false, null, 'agent:coding', 'https://github.com/paul-gauthier/aider', 'pip install aider-chat', 'Python', ['agent', 'coding'], 38700, 3600, 420, '2023-05-01', 2, '终端里改代码、小步 commit。', 'Terminal-first; small-diff commits.'],
+  ['agent', 'continue', 'coding', '编程助手', 'Coding', 'continuedev/continue', 'Open-source autocomplete and agent inside the editor.', false, null, 'agent:coding', 'https://github.com/continuedev/continue', 'Install the Continue editor extension', 'TypeScript', ['agent', 'ide'], 31200, 2800, 310, '2023-05-24', 3, '留在 IDE 里补全和改文件。', 'Stays in the editor for autocomplete and edits.'],
+  ['agent', 'gpt-researcher', 'research', '研究', 'Research', 'assafelovic/gpt-researcher', 'Autonomous research agent that writes sourced reports.', false, null, 'agent:research', 'https://github.com/assafelovic/gpt-researcher', 'pip install gpt-researcher', 'Python', ['agent', 'research'], 22100, 2400, 180, '2023-06-12', 1, '要带引用的调研报告用这个。', 'Use this when you want sourced research reports.'],
+  ['agent', 'storm', 'research', '研究', 'Research', 'stanford-oval/storm', 'Stanford OVAL agent for Wikipedia-style research articles.', false, null, 'agent:research', 'https://github.com/stanford-oval/storm', 'pip install knowledge-storm', 'Python', ['agent', 'research'], 16800, 1500, 95, '2024-03-01', 2, '更像长文写作，不是短报告。', 'Long-form articles, not short briefings.'],
+  ['agent', 'browser-use', 'browser', '浏览器', 'Browser', 'browser-use/browser-use', 'Agent that drives a real browser from natural language.', false, null, 'agent:browser', 'https://github.com/browser-use/browser-use', 'pip install browser-use', 'Python', ['agent', 'browser'], 70100, 8200, 510, '2024-10-20', 1, '要真实点击网页就用这个。', 'Pick this when the agent must click a real browser.']
 ];
 
 function isType(type) {
@@ -165,8 +172,6 @@ async function latestAssetDay() {
 }
 
 export async function seedCatalog() {
-  const existing = await one('SELECT COUNT(*)::int AS n FROM assets');
-  if (asNumber(existing?.n)) return;
   const now = new Date();
   const base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2));
   if (base > now) base.setUTCDate(base.getUTCDate() - 1);
@@ -177,6 +182,8 @@ export async function seedCatalog() {
       recRank, recZh, recEn
     ] = catalogItems[i];
     const id = `${type}-${slug}`;
+    const found = await one('SELECT id FROM assets WHERE id = $1', [id]);
+    if (found) continue;
     const createdAt = `${created}T00:00:00Z`;
     const pushed = new Date(now.getTime() - (i % 5) * 86400000).toISOString();
     await query(
@@ -533,7 +540,24 @@ export async function getCompare(type, ids) {
     const item = await getCatalogItem(type, id);
     if (item) items.push(item);
   }
-  return { type, items };
+  if (items.length === 1) {
+    const item = items[0];
+    const seen = new Set([String(item.slug || ''), String(item.id)]);
+    const peers = [];
+    if (item.similar?.length) peers.push(...item.similar);
+    if (peers.length < 2 && item.category) {
+      const ranking = await getCatalogRankings(type, { category: item.category, topic: item.category, limit: 8, board: 'stars' });
+      peers.push(...ranking.items);
+    }
+    for (const peer of peers) {
+      const key = String(peer.slug || peer.id);
+      if (seen.has(key) || seen.has(String(peer.id))) continue;
+      seen.add(key);
+      items.push(peer);
+      if (items.length >= 3) break;
+    }
+  }
+  return { type, items: items.slice(0, 3) };
 }
 
 export async function searchCatalog(q, type) {

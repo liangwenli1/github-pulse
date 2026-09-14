@@ -241,13 +241,13 @@ app.get('/{*path}', (req, res) => {
   const htmlPath = path.join(dist, 'index.html');
   if (!fs.existsSync(htmlPath)) return fail(res, 503, 'Frontend build missing. Run npm run build or use npm run dev.');
   const locale = req.path.startsWith('/zh') ? 'zh' : 'en';
-  const title = locale === 'zh' ? 'GitHub Pulse · 开源项目发现' : 'GitHub Pulse · Open-source discovery';
+  const title = locale === 'zh' ? 'Trend Top · 开源项目发现' : 'Trend Top · Open-source discovery';
   const description = locale === 'zh' ? '用透明的数据口径，发现增长、热度与值得追踪的开源项目。' : 'Discover open-source momentum, classics and newcomers through transparent signals.';
   const root = (process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
   const suffix = req.path.replace(/^\/(zh|en)/, '');
   let html = fs.readFileSync(htmlPath, 'utf8')
     .replace('<html>', `<html lang="${locale}">`)
-    .replace('<title>GitHub Pulse</title>', `<title>${title}</title><meta name="description" content="${description}"/><link rel="alternate" hreflang="zh" href="${root}/zh${suffix}"/><link rel="alternate" hreflang="en" href="${root}/en${suffix}"/><script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebSite', name: 'GitHub Pulse', url: root, inLanguage: ['zh-CN', 'en'] })}</script>`);
+    .replace('<title>Trend Top</title>', `<title>${title}</title><meta name="description" content="${description}"/><link rel="alternate" hreflang="zh" href="${root}/zh${suffix}"/><link rel="alternate" hreflang="en" href="${root}/en${suffix}"/><script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Trend Top', url: root, inLanguage: ['zh-CN', 'en'] })}</script>`);
   res.type('html').send(html);
 });
 
@@ -256,7 +256,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   ready
     .then(adapter => {
       app.listen(port, '0.0.0.0', () => {
-        console.log(`GitHub Pulse API at http://localhost:${port} (${demo ? 'DEMO' : 'LIVE'}, ${adapter.kind})`);
+        console.log(`Trend Top API at http://localhost:${port} (${demo ? 'DEMO' : 'LIVE'}, ${adapter.kind})`);
       });
     })
     .catch(e => { console.error(e); process.exit(1); });

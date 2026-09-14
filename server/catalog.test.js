@@ -15,11 +15,12 @@ const {
 } = await import('./catalog.js');
 await ready;
 
-test('catalog exposes five types and demo assets', async () => {
+test('catalog exposes six types and demo assets', async () => {
   const summary = await getTypeSummary();
-  assert.equal(summary.types.length, 5);
+  assert.equal(summary.types.length, 6);
   assert.ok(summary.types.find(x => x.id === 'skill').count >= 8);
   assert.ok(summary.types.find(x => x.id === 'plugin').count >= 8);
+  assert.ok(summary.types.find(x => x.id === 'agent').count >= 5);
   assert.ok(summary.types.find(x => x.id === 'github-repo').count >= 8);
 });
 
@@ -43,6 +44,13 @@ test('compare returns selected items side by side', async () => {
   const ids = ranking.items.slice(0, 3).map(x => x.slug);
   const compared = await getCompare('skill', ids.join(','));
   assert.equal(compared.items.length, 3);
+});
+
+test('compare with one id fills same-category peers', async () => {
+  const compared = await getCompare('skill', 'pdf-extract-pro');
+  assert.ok(compared.items.length >= 2);
+  const categories = new Set(compared.items.map(x => x.category).filter(Boolean));
+  assert.equal(categories.size, 1);
 });
 
 test('search and detail include similar cluster members', async () => {

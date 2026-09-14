@@ -27,7 +27,7 @@ export function DesignSelect({id,value,onChange,options,ariaLabel}) {
   </Select.Root>;
 }
 
-// Adapted from float_ui's 21st.dev Radix newsletter dialog; content is GitHub Pulse's own form.
+// Adapted from float_ui's 21st.dev Radix newsletter dialog; content is Trend Top's own form.
 export function SubscribeDialog({trigger,title,description,children}) {
   return <Dialog.Root><Dialog.Trigger asChild>{trigger}</Dialog.Trigger><Dialog.Portal><Dialog.Overlay className="dialog-overlay"/><Dialog.Content className="dialog-content"><Dialog.Close className="dialog-close" aria-label={document.documentElement.lang==='zh'?'关闭':'Close'}>×</Dialog.Close><Dialog.Title>{title}</Dialog.Title><Dialog.Description>{description}</Dialog.Description>{children}</Dialog.Content></Dialog.Portal></Dialog.Root>;
 }

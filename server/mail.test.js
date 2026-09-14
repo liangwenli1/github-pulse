@@ -8,7 +8,7 @@ delete process.env.DATABASE_URL;
 process.env.DATA_MODE = 'live';
 process.env.PGLITE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'pulse-mail-'));
 process.env.RESEND_API_KEY = 're_test_local';
-process.env.RESEND_FROM = 'GitHub Pulse <team@example.com>';
+process.env.RESEND_FROM = 'Trend Top <team@example.com>';
 
 const { sendMail, mailReady } = await import('./mail.js');
 const { ready, one } = await import('./db.js');
@@ -28,9 +28,9 @@ test('Resend sends both message formats, unsubscribe headers, and a stable deliv
     assert.equal(request.options.method, 'POST');
     assert.equal(request.options.headers.Authorization, 'Bearer re_test_local');
     assert.equal(request.options.headers['Idempotency-Key'], 'digest/42');
-    assert.equal(request.options.headers['User-Agent'], 'GitHubPulse/0.2.0');
+    assert.equal(request.options.headers['User-Agent'], 'TrendTop/0.2.0');
     assert.deepEqual(JSON.parse(request.options.body), {
-      from: 'GitHub Pulse <team@example.com>',
+      from: 'Trend Top <team@example.com>',
       to: ['reader@example.com'],
       subject: 'Daily digest',
       text: 'Plain text',

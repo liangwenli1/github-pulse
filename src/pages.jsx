@@ -11,6 +11,34 @@ function preservedView(page) {
   return 'ranking';
 }
 
+export function TagActions({ l, type, item, navigate, showMeta = false }) {
+  const id = String(item.slug || item.id);
+  const categoryHref = item.category ? typePath(l, type, `c/${item.category}`) : '';
+  const compareQuery = `ids=${encodeURIComponent(id)}`;
+  const categoryLabel = item.categoryLabel?.[l === 'zh' ? 'zh' : 'en'] || item.category;
+  const go = (href, query) => e => { e.preventDefault(); navigate(e, href, query); };
+  return (
+    <div className="repo-tags">
+      {item.official && <span>Official</span>}
+      {item.similarCount > 0 && categoryHref && (
+        <a className="tag-btn" href={categoryHref} onClick={go(categoryHref)}>+{item.similarCount} similar</a>
+      )}
+      {item.category && categoryHref && (
+        <a className="tag-btn" href={categoryHref} onClick={go(categoryHref)}>{categoryLabel}</a>
+      )}
+      {showMeta && item.language && <span>{item.language}</span>}
+      {showMeta && (item.topics || []).slice(0, 2).map(x => <span key={x}>{x}</span>)}
+      <a className="tag-btn tag-btn-action" href={typePath(l, type, 'compare', compareQuery)} onClick={go(typePath(l, type, 'compare'), compareQuery)}>
+        {l === 'zh' ? '对比同类' : 'Compare'}
+      </a>
+    </div>
+  );
+}
+
+export function BackBtn({ href, onClick, children }) {
+  return <a className="back-btn" href={href} onClick={onClick}>{children}</a>;
+}
+
 function TypeSwitcher({ l, type, page, query = '', navigate }) {
   const [open, setOpen] = useState(false);
   const view = preservedView(page);
@@ -83,7 +111,6 @@ export function TypeTrending({ l, t, type, navigate }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [picked, setPicked] = useState(() => { try { return JSON.parse(sessionStorage.getItem(`pulse-compare-${type}`) || '[]'); } catch { return []; } });
   useEffect(() => {
     setLoading(true);
     setError('');
@@ -92,13 +119,6 @@ export function TypeTrending({ l, t, type, navigate }) {
   const items = data?.items || [];
   const featured = items.slice(0, 3);
   const rest = items.slice(3);
-  const toggle = id => {
-    setPicked(old => {
-      const next = old.includes(id) ? old.filter(x => x !== id) : old.length >= 3 ? old : [...old, id];
-      sessionStorage.setItem(`pulse-compare-${type}`, JSON.stringify(next));
-      return next;
-    });
-  };
   return (
     <main className="page-shell trending-page">
       <header className="trending-lead">
@@ -132,12 +152,7 @@ export function TypeTrending({ l, t, type, navigate }) {
                     <div><small>{t.score}</small><strong>{fmt(item.score, l)}</strong></div>
                     <div><small>{t.stars}</small><strong>{fmt(item.stars, l)}</strong></div>
                   </div>
-                  <div className="repo-tags">
-                    {item.official && <span>Official</span>}
-                    {item.similarCount > 0 && <a href={itemPath(l, type, id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, type, id)); }}>+{item.similarCount} similar</a>}
-                    {item.category && <a href={typePath(l, type, `c/${item.category}`)} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, `c/${item.category}`)); }}>{item.categoryLabel ? item.categoryLabel[l === 'zh' ? 'zh' : 'en'] : item.category}</a>}
-                    <button type="button" className={`text-button${picked.includes(id) ? ' is-picked' : ''}`} onClick={() => toggle(id)}>{picked.includes(id) ? (l === 'zh' ? '已选' : 'Selected') : (l === 'zh' ? '对比' : 'Compare')}</button>
-                  </div>
+                  <TagActions l={l} type={type} item={item} navigate={navigate} />
                 </article>
               );
             })}
@@ -157,10 +172,7 @@ export function TypeTrending({ l, t, type, navigate }) {
                         <div>
                           <a className="repo-name" href={itemPath(l, type, id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, type, id)); }}>{item.full_name} <span>↗</span></a>
                           <p>{item.description || '—'}</p>
-                          <div className="repo-tags">
-                            {item.official && <span>Official</span>}
-                            {item.similarCount > 0 && <span>+{item.similarCount} similar</span>}
-                          </div>
+                          <TagActions l={l} type={type} item={item} navigate={navigate} />
                         </div>
                       </div>
                       <div className="metric primary-metric"><small>{t.gain}</small><strong className={item.gain != null ? 'positive' : ''}>{item.gain == null ? t.insufficient : `+${fmt(item.gain, l)}`}</strong></div>
@@ -172,45 +184,152 @@ export function TypeTrending({ l, t, type, navigate }) {
           )}
         </>
       )}
-      {picked.length >= 2 && (
-        <div className="compare-bar">
-          <span>{l === 'zh' ? `已选 ${picked.length} 条` : `${picked.length} selected`}</span>
-          <a className="primary" href={typePath(l, type, 'compare', `ids=${picked.join(',')}`)} onClick={e => navigate(e, typePath(l, type, 'compare'), `ids=${picked.join(',')}`)}>{l === 'zh' ? '去对比' : 'Compare'}</a>
-        </div>
-      )}
     </main>
   );
 }
 
+function HomeIcon({ name }) {
+  const p = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '1.7', strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+  if (name === 'skill') return <svg {...p}><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" /></svg>;
+  if (name === 'plugin') return <svg {...p}><rect x="3" y="8" width="13" height="11" rx="2" /><path d="M8 8V5M12 8V5M16 13h4M20 11v4" /></svg>;
+  if (name === 'agent') return <svg {...p}><rect x="5" y="8" width="14" height="11" rx="3" /><circle cx="9.5" cy="13.5" r="1" fill="currentColor" stroke="none" /><circle cx="14.5" cy="13.5" r="1" fill="currentColor" stroke="none" /><path d="M12 8V4M9 4h6" /></svg>;
+  if (name === 'components') return <svg {...p}><rect x="3" y="3" width="8" height="8" rx="1" /><rect x="13" y="3" width="8" height="8" rx="1" /><rect x="3" y="13" width="8" height="8" rx="1" /><rect x="13" y="13" width="8" height="8" rx="1" /></svg>;
+  if (name === 'website') return <svg {...p}><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" /></svg>;
+  if (name === 'github-repo') return <svg {...p}><circle cx="6" cy="6" r="2.2" /><circle cx="6" cy="18" r="2.2" /><circle cx="18" cy="12" r="2.2" /><path d="M8 7.2c2.4 2 2.4 7.6 0 9.6M8.2 6h5.2a4.6 4.6 0 0 1 4.6 5" /></svg>;
+  if (name === 'dup') return <svg {...p}><rect x="8" y="8" width="12" height="12" rx="1.5" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>;
+  if (name === 'official') return <svg {...p}><path d="M12 3 4.5 6.5v5.2c0 5 3.4 7.8 7.5 9.3 4.1-1.5 7.5-4.3 7.5-9.3V6.5L12 3z" /><path d="m8.8 12 2.2 2.2 4.4-4.4" /></svg>;
+  if (name === 'choose') return <svg {...p}><path d="M9 6h12M9 12h12M9 18h8" /><path d="M4 6h.01M4 12h.01M4 18h.01" /></svg>;
+  if (name === 'pulse') return <svg {...p}><path d="M3 12h4l2.5-6 4 12 2.5-6H21" /></svg>;
+  if (name === 'trending') return <svg {...p}><path d="M3 17 10 10l4 4 7-7" /><path d="M14 7h7v7" /></svg>;
+  if (name === 'rank') return <svg {...p}><path d="M8 6h13M8 12h13M8 18h9" /><path d="M4 6V5M4 12v-1M4 18v-1" /></svg>;
+  if (name === 'charts') return <svg {...p}><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></svg>;
+  return null;
+}
+
+const TYPE_BLURB = {
+  skill: { zh: '可复用的指令与工作流。', en: 'Reusable instructions and workflows.' },
+  plugin: { zh: '编辑器插件和 MCP 服务。', en: 'Editor plugins and MCP servers.' },
+  agent: { zh: '能实际跑起来的 Agent。', en: 'Agents people are actually running.' },
+  components: { zh: 'UI 组件与 registry。', en: 'UI primitives and registries.' },
+  website: { zh: '开源工具站与目录。', en: 'Open-source tools and directories.' },
+  'github-repo': { zh: '仓库近窗口热度，不是总榜。', en: 'Repos moving now, not the all-time list.' }
+};
+
 export function TypeHome({ l, t, navigate }) {
   const [data, setData] = useState(null);
+  const zh = l === 'zh';
   useEffect(() => { api('/api/types').then(setData).catch(() => setData({ types: TYPES.map(id => ({ id, ...TYPE_META[id], count: 0 })) })); }, []);
-  const types = data?.types || [];
+  useEffect(() => {
+    const nodes = document.querySelectorAll('.type-home .home-reveal');
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-in'); });
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    nodes.forEach(n => io.observe(n));
+    return () => io.disconnect();
+  }, [data]);
+  const types = data?.types?.length ? data.types : TYPES.map(id => ({ id, ...TYPE_META[id], count: 0 }));
+  const total = types.reduce((sum, x) => sum + (x.count || 0), 0);
+  const max = Math.max(1, ...types.map(x => x.count || 0));
+  const go = (path) => e => { e.preventDefault(); navigate(e, path); };
   return (
     <main className="page-shell type-home">
-      <section className="hero" id="intro">
+      <section className="hero is-active" id="intro">
         <div className="hero-intro">
-          <h1>{l === 'zh' ? <>发现 skill、插件、组件<br />与开源仓库。</> : 'Find skills, plugins, components, and repos.'}</h1>
-          <p className="hero-copy">{l === 'zh' ? '同类太多时，看排行、图表和一组可选项。官方与重复会标出来，选哪个由你决定。' : 'When a category is crowded, use rankings, charts, and a short set of options. Official and duplicate marks are facts. You choose.'}</p>
+          <p className="eyebrow">Trend Top</p>
+          <h1>{zh ? <>同类太多时，<br />看正在涨的前几名。</> : <>When a category is crowded,<br />start with what is moving.</>}</h1>
+          <p className="hero-copy">{zh
+            ? '开源 Skill、插件、Agent、组件、网站和仓库每天都在迭代。目录里已经能搜到，痛点是重复多、官方难辨、不知道这一类该看哪几个。'
+            : 'Open-source skills, plugins, agents, components, sites, and repos change every day. You can already find them. The hard part is duplicates, unofficial copies, and too many options.'}</p>
+          <p className="hero-copy">{zh
+            ? 'Trend Top 按类型给出 Trending、排行、图表和官方标记。推荐是一组选项，选哪个由你。'
+            : 'Trend Top ranks each type with Trending, rankings, charts, and official marks. Recommendations are a set of options. You choose.'}</p>
+          <div className="hero-actions">
+            <a className="primary" href="#types">{zh ? '从类型开始' : 'Start with a type'}</a>
+            <a className="secondary-link" href={`/${l}/method`} onClick={go(`/${l}/method`)}>{zh ? '关于方法' : 'How it works'}</a>
+          </div>
         </div>
-        <div className="hero-data">
-          <div className="data-status">{data?.source === 'demo' ? t.demo : t.live}</div>
-          <div className="hero-stat"><b>{fmt(types.reduce((sum, x) => sum + (x.count || 0), 0), l)}</b><span>{l === 'zh' ? '收录条目' : 'Tracked items'}</span></div>
+        <div className="hero-data home-hero-panel">
+          <div className="data-status">{data?.source === 'demo' ? t.demo : data ? t.live : t.loading}</div>
+          <div className="hero-stat"><b>{fmt(total, l)}</b><span>{zh ? '六类收录' : 'Across six types'}</span></div>
+          <div className="home-bars" aria-hidden="true">
+            {types.map((item, i) => (
+              <div className="home-bar-row" key={item.id} style={{ '--i': i, '--w': `${18 + ((item.count || 0) / max) * 82}%` }}>
+                <span>{item[zh ? 'zh' : 'en']}</span>
+                <b><i /></b>
+              </div>
+            ))}
+          </div>
           <p>{t.sample}</p>
         </div>
       </section>
-      <section className="charts-scene type-home-grid" id="types">
-        <div className="visuals-heading"><div><h2>{l === 'zh' ? '从类型开始' : 'Start with a type'}</h2><p>{l === 'zh' ? '每一类都有 Trending、排行、图表和官方。' : 'Each type has Trending, rankings, charts, and Official.'}</p></div></div>
-        <div className="chart-grid type-card-grid">
+
+      <section className="home-pitch home-reveal" aria-labelledby="home-pitch-title">
+        <div className="visuals-heading">
+          <div>
+            <h2 id="home-pitch-title">{zh ? '不是又一个目录' : 'Not another directory'}</h2>
+            <p>{zh ? '能搜到不够。站要解决的是噪音、官方和选择权。' : 'Being searchable is not enough. The site is for noise, official sources, and choice.'}</p>
+          </div>
+        </div>
+        <div className="home-pitch-grid">
+          {[
+            { icon: 'dup', zh: ['太多重复', '同名 Skill、换皮插件收进同类。先看一组，而不是刷一百条。'], en: ['Too many lookalikes', 'Same-name skills and reskins are clustered. See a set, not a hundred rows.'] },
+            { icon: 'official', zh: ['分得清官方', '厂商源和社区仿写分开标。官方是事实，不是我们替你锁死的赢家。'], en: ['Official is marked', 'Vendor sources and copies are labelled. Official is a fact, not a winner we picked.'] },
+            { icon: 'choose', zh: ['每类前几名', '推荐默认 2–4 个选项，写清差异。选哪个由你。'], en: ['A short top set', 'Recommendations are two to four options, with the differences written out. You choose.'] },
+            { icon: 'pulse', zh: ['每天都在变', 'Trending、排行和图表跟名次走。订阅把变动推过来。'], en: ['It moves every day', 'Trending, rankings, and charts follow the rank. Subscribe for the shifts.'] }
+          ].map(card => (
+            <article className="home-pitch-card" key={card.icon}>
+              <span className="home-icon-wrap"><HomeIcon name={card.icon} /></span>
+              <h3>{zh ? card.zh[0] : card.en[0]}</h3>
+              <p>{zh ? card.zh[1] : card.en[1]}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="home-views home-reveal" aria-labelledby="home-views-title">
+        <div className="visuals-heading">
+          <div>
+            <h2 id="home-views-title">{zh ? '每一类都这样看' : 'Every type works the same way'}</h2>
+            <p>{zh ? '先选类型，再选 Trending、排行、图表或官方。' : 'Pick a type, then Trending, Rankings, Charts, or Official.'}</p>
+          </div>
+        </div>
+        <div className="home-view-grid">
+          {[
+            { icon: 'trending', name: 'Trending', zh: '近窗口里正在涨的。', en: 'What is rising in this window.' },
+            { icon: 'rank', name: zh ? '排行' : 'Rankings', zh: '完整名次、筛选和对比。', en: 'Full ranks, filters, and compare.' },
+            { icon: 'charts', name: zh ? '图表' : 'Charts', zh: '曲线和对照，看谁在超车。', en: 'Curves and comparisons. Who is overtaking.' },
+            { icon: 'official', name: zh ? '官方' : 'Official', zh: '只看有官方标记的来源。', en: 'Official sources only.' }
+          ].map(view => (
+            <article className="home-view-card" key={view.icon}>
+              <span className="home-icon-wrap"><HomeIcon name={view.icon} /></span>
+              <h3>{view.name}</h3>
+              <p>{zh ? view.zh : view.en}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="home-types home-reveal" id="types">
+        <div className="visuals-heading">
+          <div>
+            <h2>{zh ? '从类型开始' : 'Start with a type'}</h2>
+            <p>{zh ? '六类分开排。点进去就是这一类的 Trending。' : 'Six types, ranked separately. Open one to land on its Trending view.'}</p>
+          </div>
+        </div>
+        <div className="type-card-grid">
           {types.map(item => (
-            <article className="chart-card type-card" key={item.id}>
-              <div className="chart-card-head"><h3><a href={typePath(l, item.id)} onClick={e => navigate(e, typePath(l, item.id))}>{item[l === 'zh' ? 'zh' : 'en']}</a></h3><span className="data-badge">{fmt(item.count, l)}</span></div>
-              <p className="type-card-copy">{l === 'zh' ? '前几名、官方标记、同类重复，自己选。' : 'Top results, official marks, and duplicates — you pick.'}</p>
+            <article className="type-card" key={item.id}>
+              <div className="type-card-top">
+                <span className="home-icon-wrap"><HomeIcon name={item.id} /></span>
+                <span className="data-badge">{fmt(item.count, l)}</span>
+              </div>
+              <h3><a href={typePath(l, item.id)} onClick={go(typePath(l, item.id))}>{item[zh ? 'zh' : 'en']}</a></h3>
+              <p className="type-card-copy">{(TYPE_BLURB[item.id] || TYPE_BLURB['github-repo'])[zh ? 'zh' : 'en']}</p>
               <div className="type-card-links">
-                <a href={typePath(l, item.id)} onClick={e => navigate(e, typePath(l, item.id))}>Trending</a>
-                <a href={typePath(l, item.id, 'ranking')} onClick={e => navigate(e, typePath(l, item.id, 'ranking'))}>{l === 'zh' ? '排行' : 'Rankings'}</a>
-                <a href={typePath(l, item.id, 'charts')} onClick={e => navigate(e, typePath(l, item.id, 'charts'))}>{l === 'zh' ? '图表' : 'Charts'}</a>
-                <a href={typePath(l, item.id, 'official')} onClick={e => navigate(e, typePath(l, item.id, 'official'))}>{l === 'zh' ? '官方' : 'Official'}</a>
+                <a href={typePath(l, item.id)} onClick={go(typePath(l, item.id))}>Trending</a>
+                <a href={typePath(l, item.id, 'ranking')} onClick={go(typePath(l, item.id, 'ranking'))}>{zh ? '排行' : 'Rankings'}</a>
+                <a href={typePath(l, item.id, 'charts')} onClick={go(typePath(l, item.id, 'charts'))}>{zh ? '图表' : 'Charts'}</a>
+                <a href={typePath(l, item.id, 'official')} onClick={go(typePath(l, item.id, 'official'))}>{zh ? '官方' : 'Official'}</a>
               </div>
             </article>
           ))}
@@ -231,6 +350,7 @@ export function CategoryPage({ l, t, type, category, navigate }) {
   const label = data.label?.[l === 'zh' ? 'zh' : 'en'] || category;
   return (
     <main className="simple-page method-page">
+      <BackBtn href={typePath(l, type, 'ranking')} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, 'ranking')); }}>{l === 'zh' ? '← 返回排行' : '← Back to rankings'}</BackBtn>
       <p className="eyebrow">{typeLabel(type, l)}</p>
       <h1>{label}</h1>
       <p className="method-intro">{l === 'zh' ? '下面是一组选项，不是唯一答案。完整排行在推荐下面。' : 'A set of options, not a single answer. The full ranking follows.'}</p>
@@ -239,7 +359,7 @@ export function CategoryPage({ l, t, type, category, navigate }) {
           <article key={item.id}>
             <h2>{item.recommendRank}. {item.full_name}</h2>
             <p>{(l === 'zh' ? item.recommendNote?.zh : item.recommendNote?.en) || item.description}</p>
-            <a className="rail-link" href={itemPath(l, type, item.slug || item.id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, type, item.slug || item.id)); }}>{l === 'zh' ? '查看详情' : 'Open details'} ↗</a>
+            <a className="tag-btn tag-btn-action" href={typePath(l, type, 'compare', `ids=${encodeURIComponent(item.slug || item.id)}`)} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, 'compare'), `ids=${encodeURIComponent(item.slug || item.id)}`); }}>{l === 'zh' ? '对比同类' : 'Compare'}</a>
           </article>
         ))}
       </div>
@@ -253,11 +373,7 @@ export function CategoryPage({ l, t, type, category, navigate }) {
               <div>
                 <a className="repo-name" href={itemPath(l, type, item.slug || item.id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, type, item.slug || item.id)); }}>{item.full_name}</a>
                 <p>{item.description}</p>
-                <div className="repo-tags">
-                  {item.official && <span>Official</span>}
-                  {item.similarCount > 0 && <span>+{item.similarCount} similar</span>}
-                  {(item.topics || []).slice(0, 3).map(x => <span key={x}>{x}</span>)}
-                </div>
+                <TagActions l={l} type={type} item={item} navigate={navigate} />
               </div>
             </div>
             <div className="metric primary-metric"><small>{t.gain}</small><strong>{item.gain == null ? t.insufficient : `+${fmt(item.gain, l)}`}</strong></div>
@@ -283,12 +399,14 @@ export function ComparePage({ l, t, type, ids, navigate }) {
     ['push', l === 'zh' ? '距上次更新（天）' : 'Days since update', item => fmt(item.pushDays, l)],
     ['evidence', l === 'zh' ? '官方依据' : 'Official evidence', item => item.officialEvidence || '—']
   ];
+  const label = items[0]?.categoryLabel?.[l === 'zh' ? 'zh' : 'en'] || items[0]?.category;
   return (
     <main className="simple-page method-page">
-      <p className="eyebrow">{typeLabel(type, l)}</p>
-      <h1>{l === 'zh' ? '对比' : 'Compare'}</h1>
-      <p className="method-intro">{l === 'zh' ? '并排看事实，选哪个由你决定。最多三条。' : 'Facts side by side. You choose. Up to three items.'}</p>
-      {items.length < 2 ? <p>{l === 'zh' ? '请从排行勾选 2～3 条再对比。' : 'Pick 2–3 items from a ranking first.'}</p> : (
+      <BackBtn href={typePath(l, type, 'ranking')} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, 'ranking')); }}>{l === 'zh' ? '← 返回排行' : '← Back to rankings'}</BackBtn>
+      <p className="eyebrow">{typeLabel(type, l)}{label ? ` · ${label}` : ''}</p>
+      <h1>{l === 'zh' ? '同类对比' : 'Compare peers'}</h1>
+      <p className="method-intro">{l === 'zh' ? '同一类别里并排看事实，选哪个由你决定。最多三条。' : 'Same category, facts side by side. You choose. Up to three items.'}</p>
+      {items.length < 2 ? <p>{l === 'zh' ? '这一类还没有可对比的同类。' : 'No peers in this category to compare yet.'}</p> : (
         <div className="compare-table-wrap">
           <table className="compare-table">
             <thead><tr><th></th>{items.map(item => <th key={item.id}><a href={itemPath(l, type, item.slug || item.id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, type, item.slug || item.id)); }}>{item.full_name}</a></th>)}</tr></thead>
@@ -307,45 +425,20 @@ export function ComparePage({ l, t, type, ids, navigate }) {
 
 export function HeaderSearch({ l, t, navigate, q = '' }) {
   const [value, setValue] = useState(q);
-  const skip = React.useRef(true);
-  useEffect(() => {
-    setValue(q);
-    skip.current = true;
-  }, [q]);
-  const commit = next => {
-    const type = new URLSearchParams(location.search).get('type') || '';
-    const params = new URLSearchParams();
-    if (next) params.set('q', next);
-    if (type) params.set('type', type);
-    const qs = params.toString();
-    const target = `/${l}/search${qs ? `?${qs}` : ''}`;
-    if (target === location.pathname + location.search) return;
-    if (/\/search\/?$/.test(location.pathname)) {
-      history.replaceState({}, '', target);
-      window.dispatchEvent(new PopStateEvent('popstate'));
-      return;
-    }
-    navigate({ preventDefault() {}, button: 0 }, `/${l}/search`, qs);
-  };
-  useEffect(() => {
-    if (skip.current) {
-      skip.current = false;
-      return;
-    }
-    const timer = setTimeout(() => commit(value.trim()), 180);
-    return () => clearTimeout(timer);
-  }, [value, l]);
+  useEffect(() => { setValue(q); }, [q]);
   return (
     <form className="header-search" role="search" onSubmit={e => {
       e.preventDefault();
-      commit(value.trim());
+      const next = value.trim();
+      if (!next) return;
+      navigate({ preventDefault() {}, button: 0 }, `/${l}/search`, `q=${encodeURIComponent(next)}`);
     }}>
       <span aria-hidden="true">⌕</span>
       <input
         type="search"
         value={value}
         onChange={e => setValue(e.target.value)}
-        placeholder={l === 'zh' ? '搜索 Skill、插件、仓库…' : 'Search skills, plugins, repos…'}
+        placeholder={l === 'zh' ? '搜索 Skill、插件、Agent、仓库…' : 'Search skills, plugins, agents, repos…'}
         aria-label={l === 'zh' ? '搜索' : 'Search'}
         autoComplete="off"
       />
@@ -372,13 +465,14 @@ export function SearchPage({ l, t, q, typeFilter = '', navigate }) {
   const setFilter = id => navigate({ preventDefault() {}, button: 0 }, `/${l}/search`, `q=${encodeURIComponent(q)}${id ? `&type=${id}` : ''}`);
   return (
     <main className="search-page">
+      <BackBtn href={`/${l}/home`} onClick={e => { e.preventDefault(); navigate(e, `/${l}/home`); }}>{l === 'zh' ? '← 返回首页' : '← Back to home'}</BackBtn>
       <div className="search-chips" role="tablist" aria-label={l === 'zh' ? '类型' : 'Types'}>
         <button type="button" className={!typeFilter ? 'is-active' : ''} onClick={() => setFilter('')}>{l === 'zh' ? '全部' : 'All'}</button>
         {TYPES.map(id => (
           <button key={id} type="button" className={typeFilter === id ? 'is-active' : ''} onClick={() => setFilter(id)}>{typeLabel(id, l)}</button>
         ))}
       </div>
-      {!q && <p className="search-hint">{l === 'zh' ? '在上方输入名称、简介或主题。' : 'Type a name, description, or topic in the bar above.'}</p>}
+      {!q && <p className="search-hint">{l === 'zh' ? '输入后按回车搜索。点 Logo 或「返回首页」可回首页。' : 'Press Enter to search. Use the logo or Back to home to return.'}</p>}
       {q && data && !items.length && <p className="state">{t.empty}</p>}
       {groups.map(group => (
         <section className="search-group" key={group.id}>
@@ -392,10 +486,7 @@ export function SearchPage({ l, t, q, typeFilter = '', navigate }) {
                 <span className="search-card-kicker">{item.official ? 'Official' : typeLabel(item.type, l)}</span>
                 <a className="repo-name" href={itemPath(l, item.type, item.slug || item.id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, item.type, item.slug || item.id)); }}>{item.full_name}</a>
                 <p>{item.description || '—'}</p>
-                <div className="repo-tags">
-                  {item.category && <span>{item.categoryLabel?.[l === 'zh' ? 'zh' : 'en'] || item.category}</span>}
-                  {(item.topics || []).slice(0, 2).map(topic => <span key={topic}>{topic}</span>)}
-                </div>
+                <TagActions l={l} type={item.type} item={item} navigate={navigate} />
               </article>
             ))}
           </div>
@@ -415,14 +506,15 @@ export function ItemDetail({ l, t, type, id, navigate }) {
   const note = l === 'zh' ? item.recommendNote?.zh : item.recommendNote?.en;
   return (
     <main className="simple-page repo-detail">
-      <a href={typePath(l, type, 'ranking')} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, 'ranking')); }}>← {t.list}</a>
+      <BackBtn href={typePath(l, type, 'ranking')} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, 'ranking')); }}>{l === 'zh' ? '← 返回排行' : '← Back to rankings'}</BackBtn>
       <p className="eyebrow">{item.mode === 'demo' ? t.demo : t.live} · {typeLabel(type, l)}</p>
       <h1>{item.full_name}</h1>
       <p className="detail-description">{item.description}</p>
       <div className="repo-tags">
         {item.official && <span>Official</span>}
-        {item.category && <a href={typePath(l, type, `c/${item.category}`)} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, `c/${item.category}`)); }}>{item.categoryLabel?.[l === 'zh' ? 'zh' : 'en'] || item.category}</a>}
+        {item.category && <a className="tag-btn" href={typePath(l, type, `c/${item.category}`)} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, `c/${item.category}`)); }}>{item.categoryLabel?.[l === 'zh' ? 'zh' : 'en'] || item.category}</a>}
         {(item.topics || []).slice(0, 6).map(x => <span key={x}>{x}</span>)}
+        <a className="tag-btn tag-btn-action" href={typePath(l, type, 'compare', `ids=${encodeURIComponent(item.slug || item.id)}`)} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, 'compare'), `ids=${encodeURIComponent(item.slug || item.id)}`); }}>{l === 'zh' ? '对比同类' : 'Compare'}</a>
       </div>
       {item.officialEvidence && <p>{l === 'zh' ? '官方依据：' : 'Official evidence: '}{item.officialEvidence}</p>}
       {note && <p>{l === 'zh' ? '和相邻选项的差别：' : 'How it differs: '}{note}</p>}

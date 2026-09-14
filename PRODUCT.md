@@ -1,6 +1,6 @@
 # Product decisions and acceptance
 
-v0.3 is type-first. The five types are `skill`, `plugin`, `components`, `website`, and `github-repo`. Each type has Trending, rankings, and charts. Category pages present a recommended set of 2–4 options plus the full ranking. The site does not pick a single winner. Official marks and similar/duplicate counts are facts the user can use when choosing.
+The public product name is **Trend Top**. v0.3 is type-first. The five types are `skill`, `plugin`, `components`, `website`, and `github-repo`. Each type has Trending, rankings, and charts. Category pages present a recommended set of 2–4 options plus the full ranking. The site does not pick a single winner. Official marks and similar/duplicate counts are facts the user can use when choosing.
 
 Old `/ranking` and `/charts` URLs redirect to `/github-repo/ranking` and `/github-repo/charts`. Repository scoring, mail, and demo/live labelling from v0.2 still apply to `github-repo`.
 

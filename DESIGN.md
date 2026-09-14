@@ -1,6 +1,6 @@
-# GitHub Pulse design system
+# Trend Top design system
 
-The high-contrast typography, black closing band, square controls, and clear navigation draw on the [Wired DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/wired/DESIGN.md) in [awesome-design-md](https://github.com/VoltAgent/awesome-design-md). The [Apple DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/apple/DESIGN.md) informed the viewport-sized section rhythm and the use of one restrained blue accent. The scroll snapping and content transitions are GitHub Pulse's own interaction design; neither reference is claimed to prescribe this exact effect. No brand artwork is copied.
+The high-contrast typography, black closing band, square controls, and clear navigation draw on the [Wired DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/wired/DESIGN.md) in [awesome-design-md](https://github.com/VoltAgent/awesome-design-md). The [Apple DESIGN.md](https://github.com/VoltAgent/awesome-design-md/blob/main/design-md/apple/DESIGN.md) informed the viewport-sized section rhythm and the use of one restrained blue accent. The scroll snapping and content transitions are Trend Top's own interaction design; neither reference is claimed to prescribe this exact effect. No brand artwork is copied.
 
 ## Foundations
 
