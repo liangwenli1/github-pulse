@@ -305,34 +305,102 @@ export function ComparePage({ l, t, type, ids, navigate }) {
   );
 }
 
-export function SearchPage({ l, t, q, navigate }) {
-  const [query, setQuery] = useState(q || '');
+export function HeaderSearch({ l, t, navigate, q = '' }) {
+  const [value, setValue] = useState(q);
+  const skip = React.useRef(true);
+  useEffect(() => {
+    setValue(q);
+    skip.current = true;
+  }, [q]);
+  const commit = next => {
+    const type = new URLSearchParams(location.search).get('type') || '';
+    const params = new URLSearchParams();
+    if (next) params.set('q', next);
+    if (type) params.set('type', type);
+    const qs = params.toString();
+    const target = `/${l}/search${qs ? `?${qs}` : ''}`;
+    if (target === location.pathname + location.search) return;
+    if (/\/search\/?$/.test(location.pathname)) {
+      history.replaceState({}, '', target);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      return;
+    }
+    navigate({ preventDefault() {}, button: 0 }, `/${l}/search`, qs);
+  };
+  useEffect(() => {
+    if (skip.current) {
+      skip.current = false;
+      return;
+    }
+    const timer = setTimeout(() => commit(value.trim()), 180);
+    return () => clearTimeout(timer);
+  }, [value, l]);
+  return (
+    <form className="header-search" role="search" onSubmit={e => {
+      e.preventDefault();
+      commit(value.trim());
+    }}>
+      <span aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        placeholder={l === 'zh' ? '搜索 Skill、插件、仓库…' : 'Search skills, plugins, repos…'}
+        aria-label={l === 'zh' ? '搜索' : 'Search'}
+        autoComplete="off"
+      />
+      {value && <button type="button" className="header-search-clear" aria-label={l === 'zh' ? '清除' : 'Clear'} onClick={() => setValue('')}>×</button>}
+    </form>
+  );
+}
+
+export function SearchPage({ l, t, q, typeFilter = '', navigate }) {
   const [data, setData] = useState(null);
   useEffect(() => {
-    if (!query) { setData({ items: [] }); return; }
-    api(`/api/search?q=${encodeURIComponent(query)}`).then(setData).catch(() => setData({ items: [] }));
-  }, [query]);
+    if (!q) { setData({ items: [] }); return; }
+    const controller = new AbortController();
+    const params = new URLSearchParams({ q });
+    if (typeFilter) params.set('type', typeFilter);
+    fetch(`/api/search?${params}`, { signal: controller.signal })
+      .then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Request failed'); return j; })
+      .then(setData)
+      .catch(e => { if (e.name !== 'AbortError') setData({ items: [] }); });
+    return () => controller.abort();
+  }, [q, typeFilter]);
+  const items = data?.items || [];
+  const groups = TYPES.map(id => ({ id, items: items.filter(item => item.type === id) })).filter(group => group.items.length);
+  const setFilter = id => navigate({ preventDefault() {}, button: 0 }, `/${l}/search`, `q=${encodeURIComponent(q)}${id ? `&type=${id}` : ''}`);
   return (
-    <main className="simple-page">
-      <h1>{l === 'zh' ? '搜索' : 'Search'}</h1>
-      <form className="subscribe-form" onSubmit={e => { e.preventDefault(); navigate({ preventDefault() {}, button: 0 }, `/${l}/search`, `q=${encodeURIComponent(query)}`); }}>
-        <div className="field"><label htmlFor="global-search">{t.search}</label><input id="global-search" value={query} onChange={e => setQuery(e.target.value)} placeholder={t.searchHint} /></div>
-      </form>
-      <div className="repo-list" style={{ marginTop: 32 }}>
-        {(data?.items || []).map(item => (
-          <article className="repo-row" key={`${item.type}-${item.id}`}>
-            <div className="repo-identity">
-              <span className="rank-num"></span>
-              <div>
-                <a className="repo-name" href={itemPath(l, item.type, item.slug || item.id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, item.type, item.slug || item.id)); }}>{item.full_name}</a>
-                <p>{item.description}</p>
-                <div className="repo-tags"><span>{typeLabel(item.type, l)}</span>{item.official && <span>Official</span>}</div>
-              </div>
-            </div>
-          </article>
+    <main className="search-page">
+      <div className="search-chips" role="tablist" aria-label={l === 'zh' ? '类型' : 'Types'}>
+        <button type="button" className={!typeFilter ? 'is-active' : ''} onClick={() => setFilter('')}>{l === 'zh' ? '全部' : 'All'}</button>
+        {TYPES.map(id => (
+          <button key={id} type="button" className={typeFilter === id ? 'is-active' : ''} onClick={() => setFilter(id)}>{typeLabel(id, l)}</button>
         ))}
       </div>
-      {data && !data.items?.length && query && <p className="state">{t.empty}</p>}
+      {!q && <p className="search-hint">{l === 'zh' ? '在上方输入名称、简介或主题。' : 'Type a name, description, or topic in the bar above.'}</p>}
+      {q && data && !items.length && <p className="state">{t.empty}</p>}
+      {groups.map(group => (
+        <section className="search-group" key={group.id}>
+          <div className="search-group-head">
+            <h2>{typeLabel(group.id, l)}</h2>
+            <span>{l === 'zh' ? `${group.items.length} 条` : `${group.items.length} results`}</span>
+          </div>
+          <div className="search-cards">
+            {group.items.map(item => (
+              <article className="search-card" key={`${item.type}-${item.id}`}>
+                <span className="search-card-kicker">{item.official ? 'Official' : typeLabel(item.type, l)}</span>
+                <a className="repo-name" href={itemPath(l, item.type, item.slug || item.id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, item.type, item.slug || item.id)); }}>{item.full_name}</a>
+                <p>{item.description || '—'}</p>
+                <div className="repo-tags">
+                  {item.category && <span>{item.categoryLabel?.[l === 'zh' ? 'zh' : 'en'] || item.category}</span>}
+                  {(item.topics || []).slice(0, 2).map(topic => <span key={topic}>{topic}</span>)}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
     </main>
   );
 }
