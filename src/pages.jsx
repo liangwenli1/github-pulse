@@ -21,7 +21,7 @@ export function TagActions({ l, type, item, navigate, showMeta = false }) {
     <div className="repo-tags">
       {item.official && <span>Official</span>}
       {item.similarCount > 0 && categoryHref && (
-        <a className="tag-btn" href={categoryHref} onClick={go(categoryHref)}>+{item.similarCount} similar</a>
+        <a className="tag-btn" href={categoryHref} onClick={go(categoryHref)}>{l === 'zh' ? '查看同类' : 'View similar'}</a>
       )}
       {item.category && categoryHref && (
         <a className="tag-btn" href={categoryHref} onClick={go(categoryHref)}>{categoryLabel}</a>

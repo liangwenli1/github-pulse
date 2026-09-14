@@ -637,11 +637,11 @@ html.is-scrolling .analytics-page-nav,
 .field .design-select-trigger{min-height:50px;font-size:16px}
 .analytics-controls label{min-width:230px;font-size:16px}
 .analytics-controls .design-select-trigger{min-height:54px;font-size:18px}
-.primary,.more,.ghost,.language-switch,.analytics-filter-shortcut,.analytics-active-filters button,.analytics-state button,.locale-choice{border-radius:2px}
+.primary,.more,.ghost,.language-switch,.analytics-filter-shortcut,.analytics-active-filters button,.analytics-state button,.locale-choice,.state button{border-radius:0}
 .primary{min-height:52px;padding:12px 22px;font-size:17px;font-weight:680}
 .ghost{font-size:16px}
-.page-deck .more{border-radius:2px}
-.analytics-filter-shortcut{border-radius:2px}
+.page-deck .more{border-radius:0}
+.analytics-filter-shortcut{border-radius:0}
 @media(max-width:700px){.analytics-controls .design-select-trigger{min-height:52px;font-size:17px}.design-select-item{min-height:48px}.primary{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.design-select-content{animation:none}.design-select-chevron{transition:none}}
 @media(max-width:900px){
@@ -753,7 +753,7 @@ html.is-scrolling .analytics-page-nav,
 
 .tag-btn,.back-btn{
   display:inline-flex;align-items:center;justify-content:center;
-  width:max-content;min-height:36px;padding:7px 14px;border:1px solid #111;border-radius:2px;
+  width:max-content;min-height:36px;padding:7px 14px;border:1px solid #111;border-radius:0;
   background:#fff;color:#111;font-size:13px;font-weight:650;line-height:1.2;
   text-decoration:none;cursor:pointer;white-space:nowrap
 }
