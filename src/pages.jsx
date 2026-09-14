@@ -1,34 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import { TYPES, TYPE_META, typeLabel, typePath, itemPath } from './catalog.js';
+import { TYPES, TYPE_META, typeLabel, typePath, itemPath, trendingCopy } from './catalog.js';
 
 const fmt = (n, l) => n === null || n === undefined ? '—' : new Intl.NumberFormat(l === 'zh' ? 'zh-CN' : 'en-US').format(n);
 const api = (url) => fetch(url).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Request failed'); return j; });
-
-export function TypeNav({ l, type, page, query = '', navigate }) {
-  const view = preservedView(page);
-  const q = page === 'home' ? '' : query;
-  return (
-    <nav className="header-types" aria-label={l === 'zh' ? '资产类型' : 'Asset types'}>
-      {TYPES.map(id => (
-        <a
-          key={id}
-          className="header-link"
-          href={typePath(l, id, view, q)}
-          aria-current={type === id ? 'page' : undefined}
-          onClick={e => navigate(e, typePath(l, id, view), q)}
-        >
-          {TYPE_META[id][l === 'zh' ? 'zh' : 'en']}
-        </a>
-      ))}
-    </nav>
-  );
-}
 
 function preservedView(page) {
   if (page === 'charts') return 'charts';
   if (page === 'official') return 'official';
   if (page === 'trending') return '';
   return 'ranking';
+}
+
+function TypeSwitcher({ l, type, page, query = '', navigate }) {
+  const [open, setOpen] = useState(false);
+  const view = preservedView(page);
+  const q = query;
+  useEffect(() => {
+    if (!open) return;
+    const close = e => { if (!e.target.closest('.type-switch')) setOpen(false); };
+    addEventListener('mousedown', close);
+    return () => removeEventListener('mousedown', close);
+  }, [open]);
+  return (
+    <div className="type-switch">
+      <button type="button" className="type-switch-btn" aria-expanded={open} aria-haspopup="listbox" onClick={() => setOpen(v => !v)}>
+        {typeLabel(type, l)} <span aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <ul className="type-switch-menu" role="listbox">
+          {TYPES.map(id => (
+            <li key={id} role="option" aria-selected={id === type}>
+              <a
+                href={typePath(l, id, view, q)}
+                aria-current={id === type ? 'page' : undefined}
+                onClick={e => { setOpen(false); navigate(e, typePath(l, id, view), q); }}
+              >
+                {TYPE_META[id][l === 'zh' ? 'zh' : 'en']}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export function ViewBar({ l, type, page, query = '', navigate }) {
@@ -41,22 +55,130 @@ export function ViewBar({ l, type, page, query = '', navigate }) {
     { id: 'official', href: typePath(l, type, 'official'), label: l === 'zh' ? '官方' : 'Official' }
   ];
   return (
-    <nav className="view-bar" aria-label={l === 'zh' ? '视图' : 'Views'}>
-      {views.map(item => (
-        <a
-          key={item.id}
-          className="view-bar-link"
-          href={item.href}
-          aria-current={current === item.id ? 'page' : undefined}
-          onClick={e => {
-            const [pathOnly, q] = item.href.split('?');
-            navigate(e, pathOnly, q || '');
-          }}
-        >
-          {item.label}
-        </a>
-      ))}
+    <nav className="view-bar" aria-label={l === 'zh' ? '类型与视图' : 'Type and views'}>
+      <TypeSwitcher l={l} type={type} page={page} query={current === 'trending' || current === 'official' ? '' : query} navigate={navigate} />
+      <div className="view-bar-tabs">
+        {views.map(item => (
+          <a
+            key={item.id}
+            className="view-bar-link"
+            href={item.href}
+            aria-current={current === item.id ? 'page' : undefined}
+            onClick={e => {
+              const [pathOnly, q] = item.href.split('?');
+              navigate(e, pathOnly, q || '');
+            }}
+          >
+            {item.label}
+          </a>
+        ))}
+      </div>
     </nav>
+  );
+}
+
+export function TypeTrending({ l, t, type, navigate }) {
+  const copy = trendingCopy(type, l);
+  const [period, setPeriod] = useState('day');
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [picked, setPicked] = useState(() => { try { return JSON.parse(sessionStorage.getItem(`pulse-compare-${type}`) || '[]'); } catch { return []; } });
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+    api(`/api/${type}/rankings?board=hot&period=${period}&limit=12`).then(setData).catch(e => setError(e.message)).finally(() => setLoading(false));
+  }, [type, period]);
+  const items = data?.items || [];
+  const featured = items.slice(0, 3);
+  const rest = items.slice(3);
+  const toggle = id => {
+    setPicked(old => {
+      const next = old.includes(id) ? old.filter(x => x !== id) : old.length >= 3 ? old : [...old, id];
+      sessionStorage.setItem(`pulse-compare-${type}`, JSON.stringify(next));
+      return next;
+    });
+  };
+  return (
+    <main className="page-shell trending-page">
+      <header className="trending-lead">
+        <div>
+          <p className="eyebrow">{typeLabel(type, l)} · Trending</p>
+          <h1>{copy.title}</h1>
+          <p className="hero-copy">{copy.sub}</p>
+        </div>
+        <div className="trending-lead-meta">
+          <div className="data-status">{loading ? t.loading : data?.source === 'demo' ? t.demo : t.live}</div>
+          <div className="hero-stat"><b>{fmt(data?.total, l)}</b><span>{typeLabel(type, l)}</span></div>
+        </div>
+      </header>
+      <div className="trending-periods" role="tablist" aria-label={t.period}>
+        {['day', 'week', 'month'].map(id => (
+          <button key={id} type="button" className={period === id ? 'is-active' : ''} onClick={() => setPeriod(id)}>{t[id]}</button>
+        ))}
+      </div>
+      {loading ? <div className="skeletons" aria-label={t.loading}>{[1, 2, 3].map(x => <div key={x} />)}</div> : error ? <div className="state"><p>{t.error}</p></div> : !featured.length ? <div className="state">{data?.dataInsufficient ? t.insufficient : t.empty}</div> : (
+        <>
+          <section className="trending-featured" aria-label={l === 'zh' ? '近窗口前三' : 'Top movers'}>
+            {featured.map(item => {
+              const id = String(item.slug || item.id);
+              return (
+                <article className="trending-card" key={item.id}>
+                  <span className="rank-num">{String(item.rank).padStart(2, '0')}</span>
+                  <a className="repo-name" href={itemPath(l, type, id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, type, id)); }}>{item.full_name} <span>↗</span></a>
+                  <p>{item.description || '—'}</p>
+                  <div className="trending-card-metrics">
+                    <div><small>{t.gain}</small><strong className="positive">{item.gain == null ? t.insufficient : `+${fmt(item.gain, l)}`}</strong></div>
+                    <div><small>{t.score}</small><strong>{fmt(item.score, l)}</strong></div>
+                    <div><small>{t.stars}</small><strong>{fmt(item.stars, l)}</strong></div>
+                  </div>
+                  <div className="repo-tags">
+                    {item.official && <span>Official</span>}
+                    {item.similarCount > 0 && <a href={itemPath(l, type, id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, type, id)); }}>+{item.similarCount} similar</a>}
+                    {item.category && <a href={typePath(l, type, `c/${item.category}`)} onClick={e => { e.preventDefault(); navigate(e, typePath(l, type, `c/${item.category}`)); }}>{item.categoryLabel ? item.categoryLabel[l === 'zh' ? 'zh' : 'en'] : item.category}</a>}
+                    <button type="button" className={`text-button${picked.includes(id) ? ' is-picked' : ''}`} onClick={() => toggle(id)}>{picked.includes(id) ? (l === 'zh' ? '已选' : 'Selected') : (l === 'zh' ? '对比' : 'Compare')}</button>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+          {rest.length > 0 && (
+            <section className="trending-rest">
+              <div className="section-heading"><div><h2>{l === 'zh' ? '同样在动' : 'Also moving'}</h2><p>{l === 'zh' ? '完整排行和筛选在 Rankings。' : 'Full filters live on Rankings.'}</p></div>
+                <a className="hero-ranking-link" href={typePath(l, type, 'ranking')} onClick={e => navigate(e, typePath(l, type, 'ranking'))}>{l === 'zh' ? '查看排行' : 'Open rankings'}</a>
+              </div>
+              <div className="repo-list">
+                {rest.map(item => {
+                  const id = String(item.slug || item.id);
+                  return (
+                    <article className="repo-row" key={item.id}>
+                      <div className="repo-identity">
+                        <span className="rank-num">{String(item.rank).padStart(2, '0')}</span>
+                        <div>
+                          <a className="repo-name" href={itemPath(l, type, id)} onClick={e => { e.preventDefault(); navigate(e, itemPath(l, type, id)); }}>{item.full_name} <span>↗</span></a>
+                          <p>{item.description || '—'}</p>
+                          <div className="repo-tags">
+                            {item.official && <span>Official</span>}
+                            {item.similarCount > 0 && <span>+{item.similarCount} similar</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="metric primary-metric"><small>{t.gain}</small><strong className={item.gain != null ? 'positive' : ''}>{item.gain == null ? t.insufficient : `+${fmt(item.gain, l)}`}</strong></div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+      {picked.length >= 2 && (
+        <div className="compare-bar">
+          <span>{l === 'zh' ? `已选 ${picked.length} 条` : `${picked.length} selected`}</span>
+          <a className="primary" href={typePath(l, type, 'compare', `ids=${picked.join(',')}`)} onClick={e => navigate(e, typePath(l, type, 'compare'), `ids=${picked.join(',')}`)}>{l === 'zh' ? '去对比' : 'Compare'}</a>
+        </div>
+      )}
+    </main>
   );
 }
 
@@ -82,7 +204,7 @@ export function TypeHome({ l, t, navigate }) {
         <div className="chart-grid type-card-grid">
           {types.map(item => (
             <article className="chart-card type-card" key={item.id}>
-              <div className="chart-card-head"><h3><a href={typePath(l, item.id, 'ranking')} onClick={e => navigate(e, typePath(l, item.id, 'ranking'))}>{item[l === 'zh' ? 'zh' : 'en']}</a></h3><span className="data-badge">{fmt(item.count, l)}</span></div>
+              <div className="chart-card-head"><h3><a href={typePath(l, item.id)} onClick={e => navigate(e, typePath(l, item.id))}>{item[l === 'zh' ? 'zh' : 'en']}</a></h3><span className="data-badge">{fmt(item.count, l)}</span></div>
               <p className="type-card-copy">{l === 'zh' ? '前几名、官方标记、同类重复，自己选。' : 'Top results, official marks, and duplicates — you pick.'}</p>
               <div className="type-card-links">
                 <a href={typePath(l, item.id)} onClick={e => navigate(e, typePath(l, item.id))}>Trending</a>

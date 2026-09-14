@@ -28,3 +28,26 @@ export const typePath = (l, type, page = '', query = '') => {
   const suffix = page ? `/${page}` : '';
   return `/${l}/${type}${suffix}${query ? `?${query}` : ''}`;
 };
+export const TRENDING_COPY = {
+  skill: {
+    zh: { title: '正在被用起来的 Skill', sub: '看近窗口里涨得快的 Skill。官方和同类会标出来，选哪个由你。' },
+    en: { title: 'Skills gaining ground', sub: 'What is rising in this window. Official and similar items are marked. You choose.' }
+  },
+  plugin: {
+    zh: { title: '插件和 MCP 的热度', sub: '近窗口里动量最高的插件与 MCP。重复项收进同类。' },
+    en: { title: 'Plugins and MCP on the move', sub: 'Servers and plugins with the strongest recent momentum. Duplicates are clustered.' }
+  },
+  components: {
+    zh: { title: '组件库里正在涨的', sub: '按钮、Hero、原语——同类很多时，先看近窗口前几名。' },
+    en: { title: 'Components picking up steam', sub: 'Buttons, heros, primitives. When a category is crowded, start with the top movers.' }
+  },
+  website: {
+    zh: { title: '最近变热的开源网站', sub: '工具站、目录、画廊。先看涨幅，再决定收藏哪一个。' },
+    en: { title: 'Open-source sites heating up', sub: 'Tools, directories, galleries. Use the rise, then decide what to keep.' }
+  },
+  'github-repo': {
+    zh: { title: '仓库近窗口热度', sub: 'Star 正在增加的仓库。这不是总榜，是最近在动的那些。' },
+    en: { title: 'Repositories moving now', sub: 'Repos gaining stars in this window — not the all-time list, the ones in motion.' }
+  }
+};
+export const trendingCopy = (type, l) => (TRENDING_COPY[type] || TRENDING_COPY['github-repo'])[l === 'zh' ? 'zh' : 'en'];
